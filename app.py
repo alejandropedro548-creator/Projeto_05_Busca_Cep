@@ -70,7 +70,7 @@ elif escolha == "🔍 Buscar CEP":
 
 elif escolha == "📍 Descobrir CEP":
     st.subheader("📍 Descobrir o CEP pelo endereço")
-    st.image("descobrir.png", caption="Encontre o CEP ideal")
+    st.image("Descobrir.png", caption="Encontre o CEP ideal")
     endereco = st.text_input("🏠 Digite o endereço completo:")
     if endereco:
         with st.spinner("🔄 Buscando no Google..."):
