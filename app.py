@@ -12,7 +12,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
 # CABEÇALHO
 st.markdown("<h1>📦 Busca CEP</h1>", unsafe_allow_html=True)
 st.markdown("<h3>Encontre endereços com rapidez e segurança</h3>", unsafe_allow_html=True)
@@ -53,14 +52,21 @@ elif escolha == "🔍 Buscar CEP":
                         """)
                         latitude = resultado[5]
                         longitude = resultado[6]
-                        if latitude and longitude:
-                            st.markdown("🗺️ **Localização do CEP informado no mapa:**")
-                            st.markdown(f"""
-                                - 📌 **Latitude:** `{latitude}`
-                                - 📌 **Longitude:** `{longitude}`
-                            """)
-                            mapa_df = pd.DataFrame({'lat': [latitude], 'lon': [longitude]})
-                            st.map(mapa_df, zoom=15)
+
+                        # ✅ Verifica e converte corretamente latitude/longitude
+                        if latitude is not None and longitude is not None:
+                            try:
+                                lat = float(latitude)
+                                lon = float(longitude)
+                                st.markdown("🗺️ **Localização do CEP informado no mapa:**")
+                                st.markdown(f"""
+                                    - 📌 **Latitude:** `{lat}`
+                                    - 📌 **Longitude:** `{lon}`
+                                """)
+                                mapa_df = pd.DataFrame({'lat': [lat], 'lon': [lon]})
+                                st.map(mapa_df, zoom=15)
+                            except (ValueError, TypeError):
+                                st.info("🗺️ Localização geográfica não disponível para este CEP.")
                         else:
                             st.info("🗺️ Localização geográfica não disponível para este CEP.")
                     else:
