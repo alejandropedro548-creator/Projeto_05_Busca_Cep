@@ -10,10 +10,7 @@ import math
 # --------------------------
 def safe_float(x):
     """Tenta converter x para float; retorna None se não for possível."""
-    if x is None:
-        return None
-    # às vezes vem 'None' como string, tratar também
-    if isinstance(x, str) and x.strip().lower() == "none":
+    if x is None or (isinstance(x, str) and x.strip().lower() == "none"):
         return None
     try:
         return float(x)
@@ -30,7 +27,6 @@ def extract_lat_lon(resultado):
     lat = None
     lon = None
 
-    # Se for dicionário, tentar chaves comuns
     if isinstance(resultado, dict):
         possible_lat_keys = ["latitude", "lat", "lati", "y", "latitude_value"]
         possible_lon_keys = ["longitude", "lon", "lng", "x", "longitude_value"]
@@ -43,17 +39,13 @@ def extract_lat_lon(resultado):
                 lon = resultado.get(k)
                 break
 
-    # Se for lista/tupla, tentar índices 5 e 6 (padrão do seu código anterior)
-    if (lat is None or lon is None) and (isinstance(resultado, (list, tuple))):
+    if (lat is None or lon is None) and isinstance(resultado, (list, tuple)):
         if len(resultado) > 6:
             lat = lat if lat is not None else resultado[5]
             lon = lon if lon is not None else resultado[6]
         elif len(resultado) > 5:
-            # caso só tenha 6 itens (0..5), assume que 5 é lat e não há lon
-            lat = lat if lat is not None else (resultado[5] if len(resultado) > 5 else None)
+            lat = lat if lat is not None else resultado[5]
 
-    # Como último recurso, procurar no conteúdo qualquer valor que pareça latitude/longitude
-    # (útil se o formato do resultado variar)
     if (lat is None or lon is None) and isinstance(resultado, (list, tuple)):
         for item in resultado:
             if lat is None:
@@ -67,9 +59,8 @@ def extract_lat_lon(resultado):
                     lon = maybe
                     continue
 
-    # Converter com segurança para float
-    latf = safe_float(lat)
-    lonf = safe_float(lon)
+    latf = safe_float(lat) if lat is not None else None
+    lonf = safe_float(lon) if lon is not None else None
 
     return latf, lonf
 
@@ -96,21 +87,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CABEÇALHO
 st.markdown("<h1>📦 Busca CEP</h1>", unsafe_allow_html=True)
 st.markdown("<h3>Encontre endereços com rapidez e segurança</h3>", unsafe_allow_html=True)
 st.markdown("---")
 
-# MENU LATERAL
 st.sidebar.header("🧭 Menu")
 opcoes = ["🏠 Página Principal", "🔍 Buscar CEP", "📍 Descobrir CEP"]
 escolha = st.sidebar.radio("Selecione uma opção:", opcoes)
 
-# CONTEÚDO
 if escolha == "🏠 Página Principal":
     st.subheader("👋 Bem-vindo ao Busca CEP!")
     st.write("Use o menu lateral para buscar ou descobrir um CEP.")
-    # imagem opcional
     try:
         st.image("principal.png", caption="Entrega garantida com segurança")
     except Exception:
@@ -135,18 +122,9 @@ elif escolha == "🔍 Buscar CEP":
                 try:
                     resultado = BuscarCep.buscar_cep(cep)
 
-                    # Se quiser, descomente a linha abaixo para DEBUG (mostra o retorno real)
-                    # st.write("DEBUG: resultado bruto:", resultado)
-
                     if resultado:
-                        # Mostra os campos principais com segurança
-                        cep_res = None
-                        endereco_res = None
-                        bairro_res = None
-                        cidade_res = None
-                        uf_res = None
+                        cep_res = endereco_res = bairro_res = cidade_res = uf_res = None
 
-                        # Tentar extrair campos por posição (tupla/lista)
                         if isinstance(resultado, (list, tuple)):
                             cep_res = resultado[0] if len(resultado) > 0 else None
                             endereco_res = resultado[1] if len(resultado) > 1 else None
@@ -168,7 +146,6 @@ elif escolha == "🔍 Buscar CEP":
                             - 🌆 **Cidade:** {cidade_res or '—'} - {uf_res or '—'}
                         """)
 
-                        # Extrair e validar latitude/longitude com função robusta
                         latf, lonf = extract_lat_lon(resultado)
 
                         if is_valid_coordinate(latf, "lat") and is_valid_coordinate(lonf, "lon"):
@@ -178,20 +155,13 @@ elif escolha == "🔍 Buscar CEP":
                                 - 📌 **Longitude:** `{lonf}`
                             """)
                             mapa_df = pd.DataFrame({'lat': [latf], 'lon': [lonf]})
-                            # st.map faz a conversão interna; aqui garantimos que passamos floats válidos
                             st.map(mapa_df, zoom=15)
                         else:
                             st.info("🗺️ Localização geográfica não disponível ou inválida para este CEP.")
                     else:
                         st.error("❌ CEP não encontrado.")
                 except Exception as e:
-                    # Mensagem de erro mais informativa
                     st.error(f"🚫 Erro ao buscar CEP: {e}")
-                    # Opcional: mostrar tipo do retorno para ajudar a depurar
-                    try:
-                        st.debug_info = None
-                    except Exception:
-                        pass
 
 elif escolha == "📍 Descobrir CEP":
     st.subheader("📍 Descobrir o CEP pelo endereço")
