@@ -20,44 +20,34 @@ def safe_float(x):
 def extract_lat_lon(resultado):
     """
     Tenta extrair latitude e longitude de 'resultado' retornado por BuscarCep.buscar_cep.
-    Suporta: lista/tupla no formato [cep, endereco, bairro, cidade, uf, lat, lon]
-    ou dicionário com chaves prováveis.
     Retorna (lat_float_or_None, lon_float_or_None)
     """
     lat = None
     lon = None
 
     if isinstance(resultado, dict):
-        possible_lat_keys = ["latitude", "lat", "lati", "y", "latitude_value"]
-        possible_lon_keys = ["longitude", "lon", "lng", "x", "longitude_value"]
-        for k in possible_lat_keys:
-            if k in resultado:
-                lat = resultado.get(k)
+        for k in ["latitude", "lat", "lati", "y", "latitude_value"]:
+            if k in resultado and resultado[k] is not None:
+                lat = resultado[k]
                 break
-        for k in possible_lon_keys:
-            if k in resultado:
-                lon = resultado.get(k)
+        for k in ["longitude", "lon", "lng", "x", "longitude_value"]:
+            if k in resultado and resultado[k] is not None:
+                lon = resultado[k]
                 break
 
-    if (lat is None or lon is None) and isinstance(resultado, (list, tuple)):
+    elif isinstance(resultado, (list, tuple)):
         if len(resultado) > 6:
-            lat = lat if lat is not None else resultado[5]
-            lon = lon if lon is not None else resultado[6]
-        elif len(resultado) > 5:
-            lat = lat if lat is not None else resultado[5]
-
-    if (lat is None or lon is None) and isinstance(resultado, (list, tuple)):
+            lat = resultado[5] if resultado[5] is not None else lat
+            lon = resultado[6] if resultado[6] is not None else lon
         for item in resultado:
             if lat is None:
                 maybe = safe_float(item)
                 if maybe is not None and -90 <= maybe <= 90:
                     lat = maybe
-                    continue
             if lon is None:
                 maybe = safe_float(item)
                 if maybe is not None and -180 <= maybe <= 180:
                     lon = maybe
-                    continue
 
     latf = safe_float(lat) if lat is not None else None
     lonf = safe_float(lon) if lon is not None else None
@@ -121,6 +111,7 @@ elif escolha == "🔍 Buscar CEP":
             with st.spinner("🔄 Buscando informações..."):
                 try:
                     resultado = BuscarCep.buscar_cep(cep)
+                    st.write("DEBUG: resultado bruto do CEP:", resultado)
 
                     if resultado:
                         cep_res = endereco_res = bairro_res = cidade_res = uf_res = None
